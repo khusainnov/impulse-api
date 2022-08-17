@@ -9,7 +9,7 @@ import (
 
 type ZodiacApi interface {
 	DataWorker(r io.Reader) (entity.Summary, error)
-	GenerateToken(clientID int, clientSecret string) (string, error)
+	GenerateToken(clientID int) (string, error)
 }
 
 type Service struct {

@@ -40,7 +40,7 @@ func (h *Handler) WesternHoroscope(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := h.service.ZodiacApi.GenerateToken(618694, "6b03d1dfcbb5d09e704badf9730e3fca")
+	token, err := h.service.ZodiacApi.GenerateToken(618694)
 	if err != nil {
 		json.NewEncoder(w).Encode(&map[string]interface{}{
 			"code":    http.StatusInternalServerError,

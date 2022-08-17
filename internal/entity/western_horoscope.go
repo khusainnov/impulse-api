@@ -19,6 +19,8 @@ type Planets struct {
 	Sign       string  `json:"sign,omitempty"`
 	House      int     `json:"house,omitempty"`
 	Element    string  `json:"element,omitempty"`
+	Crest      string  `json:"crest,omitempty"`
+	Burred     string  `json:"burred,omitempty"`
 }
 
 type Houses struct {
