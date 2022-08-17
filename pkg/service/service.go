@@ -8,7 +8,8 @@ import (
 )
 
 type ZodiacApi interface {
-	DataWorker(r io.Reader) (entity.Summary, error)
+	DataWorkerWithoutTime(r io.Reader) (entity.Summary, error)
+	DataWorkerWithTime(r io.Reader) (entity.Summary, error)
 	GenerateToken(clientID int) (string, error)
 }
 

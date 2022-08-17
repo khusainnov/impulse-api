@@ -18,7 +18,7 @@ func (h *Handler) InitRoute() *mux.Router {
 	r := mux.NewRouter()
 
 	r.HandleFunc("/signs/{birthday}/{birth_time}/{city}", h.WesternHoroscope).Methods("GET", "POST")
-	r.HandleFunc("/planet-in-houses", h.PlanetsInHouses).Methods("POST")
+	//r.HandleFunc("/planet-in-houses", h.PlanetsInHouses).Methods("POST")
 
 	return r
 }

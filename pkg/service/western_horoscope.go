@@ -42,7 +42,7 @@ func NewWesternHoroscope(repo repository.ZodiacAPI) *WesternHoroscope {
 	return &WesternHoroscope{repo: repo}
 }
 
-func (ws *WesternHoroscope) DataWorker(r io.Reader) (entity.Summary, error) {
+func (ws *WesternHoroscope) DataWorkerWithoutTime(r io.Reader) (entity.Summary, error) {
 	var dataBody entity.Summary
 	//var dataBody.Planets []entity.Planets
 	localAspects := make([]entity.Aspects, 0, 1000)
@@ -128,6 +128,18 @@ func (ws *WesternHoroscope) DataWorker(r io.Reader) (entity.Summary, error) {
 		if ((dataAspects[i].AspectedPlanet == "Mars" && dataAspects[i].AspectingPlanet == "Venus") || (dataAspects[i].AspectedPlanet == "Venus" && dataAspects[i].AspectingPlanet == "Mars")) && dataAspects[i].Type == "Conjunction" {
 			localAspects = append(localAspects, dataAspects[i])
 		}
+
+		if dataAspects[i].Type == "Square" || dataAspects[i].Type == "Opposition" {
+			localAspects = append(localAspects, dataAspects[i])
+		}
+
+		if (((dataAspects[i].AspectingPlanet == "Mars" || dataAspects[i].AspectingPlanet == "Venus") &&
+			(dataAspects[i].AspectedPlanet == "Uranus" && dataAspects[i].AspectedPlanet == "Neptune" && dataAspects[i].AspectedPlanet == "Pluto")) ||
+			((dataAspects[i].AspectedPlanet == "Mars" || dataAspects[i].AspectedPlanet == "Venus") &&
+				(dataAspects[i].AspectingPlanet == "Uranus" && dataAspects[i].AspectingPlanet == "Neptune" && dataAspects[i].AspectingPlanet == "Pluto"))) &&
+			dataAspects[i].Type == "Conjunction" {
+			localAspects = append(localAspects, dataAspects[i])
+		}
 	}
 
 	for i, _ := range localAspects {
@@ -135,6 +147,56 @@ func (ws *WesternHoroscope) DataWorker(r io.Reader) (entity.Summary, error) {
 	}
 
 	dataBody.Aspects = localAspects
+
+	return dataBody, nil
+}
+
+func (ws *WesternHoroscope) DataWorkerWithTime(r io.Reader) (entity.Summary, error) {
+	var dataBody entity.Summary
+	var localDataBody entity.Summary
+	//localDataBody := make([]entity.Aspects, 0, 1000)
+
+	dBody, err := ioutil.ReadAll(r)
+	if err != nil {
+		return entity.Summary{}, err
+	}
+
+	err = json.Unmarshal(dBody, &dataBody)
+	if err != nil {
+		return entity.Summary{}, err
+	}
+
+	for _, v := range dataBody.Houses {
+		fmt.Printf("%v", v)
+	}
+
+	// start of p.1
+	for _, v := range dataBody.Planets {
+		if v.House == 7 {
+			localDataBody.Planets = append(localDataBody.Planets, v)
+		}
+	}
+
+	dataBodyAspects := dataBody.Aspects
+
+	if len(localDataBody.Planets) != 0 {
+
+		for _, v := range localDataBody.Planets {
+			for i, _ := range dataBodyAspects {
+				if (dataBodyAspects[i].AspectingPlanet == v.Name) || (dataBodyAspects[i].AspectedPlanet == v.Name) {
+					localDataBody.Aspects = append(localDataBody.Aspects, dataBodyAspects[i])
+				}
+			}
+		}
+
+		// end of p.1
+	} else {
+		// start of p.2
+
+		// end of p.2
+	}
+
+	dataBody.Aspects = localDataBody.Aspects
 
 	return dataBody, nil
 }

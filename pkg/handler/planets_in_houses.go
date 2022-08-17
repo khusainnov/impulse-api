@@ -30,7 +30,7 @@ func (h *Handler) PlanetsInHouses(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dataBody, err = h.service.DataWorker(resp.Body)
+	dataBody, err = h.service.DataWorkerWithoutTime(resp.Body)
 	if err != nil {
 		json.NewEncoder(w).Encode(&map[string]interface{}{
 			"code":    http.StatusInternalServerError,

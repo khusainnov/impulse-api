@@ -50,7 +50,14 @@ func (h *Handler) WesternHoroscope(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("access-token", token)
 
-	dataBody, err = h.service.DataWorker(resp.Body)
+	logrus.Printf("%s \t  %d\n", birthTime, len(birthTime))
+	if len(birthTime) <= 2 {
+		fmt.Println("Without")
+		dataBody, err = h.service.DataWorkerWithoutTime(resp.Body)
+	} else {
+		fmt.Println("With")
+		dataBody, err = h.service.DataWorkerWithTime(resp.Body)
+	}
 
 	if err != nil {
 		json.NewEncoder(w).Encode(&map[string]interface{}{
