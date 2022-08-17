@@ -165,11 +165,6 @@ func (ws *WesternHoroscope) DataWorkerWithTime(r io.Reader) (entity.Summary, err
 	if err != nil {
 		return entity.Summary{}, err
 	}
-
-	for _, v := range dataBody.Houses {
-		fmt.Printf("%v", v)
-	}
-
 	// start of p.1
 	for _, v := range dataBody.Planets {
 		if v.House == 7 {
@@ -188,15 +183,15 @@ func (ws *WesternHoroscope) DataWorkerWithTime(r io.Reader) (entity.Summary, err
 				}
 			}
 		}
-
+		fmt.Println("not empty")
 		// end of p.1
 	} else {
 		// start of p.2
-
+		fmt.Println("empty")
 		// end of p.2
 	}
 
-	dataBody.Aspects = localDataBody.Aspects
+	dataBody = localDataBody
 
 	return dataBody, nil
 }
