@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"time"
 
 	"impulse-api/internal/entity"
@@ -20,15 +21,14 @@ func (h *Handler) WesternHoroscope(w http.ResponseWriter, r *http.Request) {
 	birthday := v["birthday"]
 	birthTime := v["birth_time"]
 	city := v["city"]
+	sex := v["sex"]
 
 	logrus.Printf("%s\n%s\n%s\n", birthday, birthTime, city)
 
-	API := fmt.Sprintf("http://astro2022.fun/hooksp.php?action=western_horoscope&date=%s&time=%s&horo=moon&place=%s", birthday, birthTime, city)
+	API := fmt.Sprintf("%s&date=%s&time=%s&horo=moon&place=%s", os.Getenv("API"), birthday, birthTime, city)
 
 	var dataBody entity.Summary
 	var body io.LimitedReader
-
-	//api := os.Getenv("API")
 
 	client := http.Client{
 		Timeout: time.Second * 15,
@@ -52,10 +52,8 @@ func (h *Handler) WesternHoroscope(w http.ResponseWriter, r *http.Request) {
 
 	logrus.Printf("%s \t  %d\n", birthTime, len(birthTime))
 	if len(birthTime) <= 2 {
-		fmt.Println("Without")
-		dataBody, err = h.service.DataWorkerWithoutTime(resp.Body)
+		dataBody, err = h.service.DataWorkerWithoutTime(resp.Body, sex)
 	} else {
-		fmt.Println("With")
 		dataBody, err = h.service.DataWorkerWithTime(resp.Body)
 	}
 
@@ -67,17 +65,7 @@ func (h *Handler) WesternHoroscope(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	/*dBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		logrus.Errorf("Cannot read body, due to error: %s", err.Error())
-	}
-
-	err = json.Unmarshal(dBody, &dataBody)
-	if err != nil {
-		logrus.Errorf("Cannot unmarshall body, due to error: %s", err.Error())
-	}*/
-
-	json.NewEncoder(w).Encode(&dataBody)
+	json.NewEncoder(w).Encode(&dataBody.Aspects)
 
 	return
 }
