@@ -26,6 +26,8 @@ func (h *Handler) WesternHoroscope(w http.ResponseWriter, r *http.Request) {
 	logrus.Printf("%s\n%s\n%s\n", birthday, birthTime, city)
 
 	API := fmt.Sprintf("%s&date=%s&time=%s&horo=moon&place=%s", os.Getenv("API"), birthday, birthTime, city)
+	//API_CUSPS := fmt.Sprintf("%s&date=%s&time=%s&horo=sun&place=%s",
+	//	os.Getenv("API_CUSPS"), birthday, birthTime, city)
 
 	var dataBody entity.Summary
 	var body io.LimitedReader
@@ -39,6 +41,12 @@ func (h *Handler) WesternHoroscope(w http.ResponseWriter, r *http.Request) {
 		logrus.Errorf("Cannot get data from api, due to error: %s", err.Error())
 		return
 	}
+
+	//resp_cusp, err := client.Post(API_CUSPS, "application/json", &body)
+	//if err != nil {
+	//	logrus.Errorf("Cannot get data from cusps_api, due to error: %s", err.Error())
+	//	return
+	//}
 
 	token, err := h.service.ZodiacApi.GenerateToken(618694)
 	if err != nil {
@@ -65,7 +73,7 @@ func (h *Handler) WesternHoroscope(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	json.NewEncoder(w).Encode(&dataBody.Aspects)
+	json.NewEncoder(w).Encode(&dataBody)
 
 	return
 }

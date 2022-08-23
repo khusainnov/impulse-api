@@ -10,6 +10,7 @@ import (
 type ZodiacApi interface {
 	DataWorkerWithoutTime(r io.Reader, sex string) (entity.Summary, error)
 	DataWorkerWithTime(r io.Reader) (entity.Summary, error)
+	//CuspsWorker(r io.Reader) (entity.Planets, error)
 	GenerateToken(clientID int) (string, error)
 }
 
