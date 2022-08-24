@@ -30,6 +30,7 @@ func (h *Handler) WesternHoroscope(w http.ResponseWriter, r *http.Request) {
 	//	os.Getenv("API_CUSPS"), birthday, birthTime, city)
 
 	var dataBody entity.Summary
+	var uprBody entity.ResponseUpr
 	var body io.LimitedReader
 
 	client := http.Client{
@@ -61,19 +62,26 @@ func (h *Handler) WesternHoroscope(w http.ResponseWriter, r *http.Request) {
 	logrus.Printf("%s \t  %d\n", birthTime, len(birthTime))
 	if len(birthTime) <= 2 {
 		dataBody, err = h.service.DataWorkerWithoutTime(resp.Body, sex)
+		if err != nil {
+			_ = json.NewEncoder(w).Encode(&map[string]interface{}{
+				"code":    http.StatusInternalServerError,
+				"message": err.Error(),
+			})
+			return
+		}
+		json.NewEncoder(w).Encode(&dataBody)
+		return
 	} else {
-		dataBody, err = h.service.DataWorkerWithTime(resp.Body)
-	}
 
-	if err != nil {
-		json.NewEncoder(w).Encode(&map[string]interface{}{
-			"code":    http.StatusInternalServerError,
-			"message": err.Error(),
-		})
+		uprBody, err = h.service.DataWorkerWithTime(resp.Body)
+		if err != nil {
+			_ = json.NewEncoder(w).Encode(&map[string]interface{}{
+				"code":    http.StatusInternalServerError,
+				"message": err.Error(),
+			})
+			return
+		}
+		json.NewEncoder(w).Encode(&uprBody)
 		return
 	}
-
-	json.NewEncoder(w).Encode(&dataBody)
-
-	return
 }

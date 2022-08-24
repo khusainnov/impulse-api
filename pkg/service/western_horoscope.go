@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
+	"os"
 	"time"
 
 	"impulse-api/internal/entity"
@@ -24,6 +25,8 @@ const (
 	cardinalCross = "Кардинальный крест"
 	fixedCross    = "Фиксированный крест"
 	mutableCross  = "Мутабельный крест"
+	housesUpr     = "houses_upr.json"
+	planetsPower  = "planets_power.json"
 )
 
 type WesternHoroscope struct {
@@ -158,32 +161,52 @@ func (ws *WesternHoroscope) DataWorkerWithoutTime(r io.Reader, sex string) (enti
 	return dataBody, nil
 }
 
-func (ws *WesternHoroscope) DataWorkerWithTime(r io.Reader) (entity.Summary, error) {
+func (ws *WesternHoroscope) DataWorkerWithTime(r io.Reader) (entity.ResponseUpr, error) {
 	var dataBody entity.Summary
 	var localDataBody entity.Summary
+	var responseBody entity.ResponseUpr
 
 	dBody, err := ioutil.ReadAll(r)
 	if err != nil {
-		return entity.Summary{}, err
+		return entity.ResponseUpr{}, err
 	}
 
 	err = json.Unmarshal(dBody, &dataBody)
 	if err != nil {
-		return entity.Summary{}, err
+		return entity.ResponseUpr{}, err
 	}
 
 	// start of p.1
 	// Planets with house number 7 will add into localDataBody
-	for _, v := range dataBody.Planets {
+	for _, v := range dataBody.Houses {
 		if v.House == 7 {
-			localDataBody.Planets = append(localDataBody.Planets, v)
+			localDataBody.Houses = append(localDataBody.Houses, v)
 		}
 	}
 
-	dataBodyAspects := dataBody.Aspects
+	localHousesUpr, err := jsonReader()
+	if err != nil {
+		return entity.ResponseUpr{}, err
+	}
+
+	for _, v := range localHousesUpr.Hoe {
+		//fmt.Printf("%d. %v\n", i+1, v)
+		if v.Sign == localDataBody.Houses[0].Sign {
+			responseBody.Sign = v.Sign
+			responseBody.Upr = v.Upr
+		}
+	}
+
+	for _, v := range dataBody.Aspects {
+		if v.AspectedPlanet == responseBody.Upr || v.AspectingPlanet == responseBody.Upr {
+			responseBody.Aspects = append(responseBody.Aspects, v)
+		}
+	}
+
+	//dataBodyAspects := dataBody.Aspects
 
 	// If planets with house #7 exist in localDataBody we continue work with p.1
-	if len(localDataBody.Planets) != 0 {
+	/*if len(localDataBody.Planets) != 0 {
 		for _, v := range localDataBody.Planets {
 			for i, _ := range dataBodyAspects {
 				if (dataBodyAspects[i].AspectingPlanet == v.Name) || (dataBodyAspects[i].AspectedPlanet == v.Name) {
@@ -214,11 +237,36 @@ func (ws *WesternHoroscope) DataWorkerWithTime(r io.Reader) (entity.Summary, err
 			}
 		}
 		// end of p.2
+	}*/
+
+	return responseBody, nil
+}
+
+func jsonReader() (entity.HouseUpr, error) {
+	var localHousesUpr entity.HouseUpr
+
+	jsonFile, err := os.Open(housesUpr)
+	if err != nil {
+		logrus.Errorf("Cannot open the file: %s, due to error: %s", housesUpr, err.Error())
+		return entity.HouseUpr{}, err
+	}
+	defer jsonFile.Close()
+
+	byteData, err := ioutil.ReadAll(jsonFile)
+	if err != nil {
+		logrus.Errorf("Cannot read the file: %s, due to error: %s", housesUpr, err.Error())
+		return entity.HouseUpr{}, err
 	}
 
-	dataBody = localDataBody
+	//byteData = bytes.TrimPrefix(byteData, []byte("\xef\xbb\xbf"))
 
-	return dataBody, nil
+	err = json.Unmarshal(byteData, &localHousesUpr)
+	if err != nil {
+		logrus.Errorf("Cannot unmaeshal the file: %s, due to error: %s", housesUpr, err.Error())
+		return entity.HouseUpr{}, err
+	}
+
+	return localHousesUpr, nil
 }
 
 func (ws *WesternHoroscope) GenerateToken(clientID int) (string, error) {
