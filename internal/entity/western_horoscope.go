@@ -7,20 +7,22 @@ type Summary struct {
 	Midheaven float64   `json:"midheaven,omitempty"`
 	Vertex    float64   `json:"vertex,omitempty"`
 	Aspects   []Aspects `json:"aspects,omitempty"`
+	Result    string    `json:"result,omitempty"`
 }
 
 type Planets struct {
-	Name       string  `json:"name,omitempty"`
-	FullDegree float64 `json:"full_degree,omitempty"`
-	NormDegree float64 `json:"norm_degree,omitempty"`
-	Speed      float64 `json:"speed,omitempty"`
-	IsRetro    string  `json:"is_retro,omitempty"`
-	SignID     int     `json:"sign_id,omitempty"`
-	Sign       string  `json:"sign,omitempty"`
-	House      int     `json:"house,omitempty"`
-	Element    string  `json:"element,omitempty"`
-	Crest      string  `json:"crest,omitempty"`
-	Burred     string  `json:"burred,omitempty"`
+	Name       string      `json:"name,omitempty"`
+	FullDegree float64     `json:"full_degree,omitempty"`
+	NormDegree float64     `json:"norm_degree,omitempty"`
+	Speed      float64     `json:"speed,omitempty"`
+	IsRetro    string      `json:"is_retro,omitempty"`
+	SignID     int         `json:"sign_id,omitempty"`
+	Sign       string      `json:"sign,omitempty"`
+	House      int         `json:"house,omitempty"`
+	Element    string      `json:"element,omitempty"`
+	Crest      string      `json:"crest,omitempty"`
+	Burred     string      `json:"burred,omitempty"`
+	Power      interface{} `json:"power,omitempty"`
 }
 
 type Houses struct {

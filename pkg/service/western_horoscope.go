@@ -1,10 +1,14 @@
 package service
 
 import (
+	"bufio"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"impulse-api/internal/entity"
@@ -44,9 +48,11 @@ func NewWesternHoroscope(repo repository.ZodiacAPI) *WesternHoroscope {
 	return &WesternHoroscope{repo: repo}
 }
 
+// DataWorkerWithoutTime - change response param from entity.Summary on string (for easy sending data into chat)
 func (ws *WesternHoroscope) DataWorkerWithoutTime(r io.Reader, sex string) (entity.Summary, error) {
 	var dataBody entity.Summary
 
+	checkData := make([]entity.CheckVars, 1096)
 	localAspects := make([]entity.Aspects, 0, 1000)
 
 	dBody, err := ioutil.ReadAll(r)
@@ -57,6 +63,21 @@ func (ws *WesternHoroscope) DataWorkerWithoutTime(r io.Reader, sex string) (enti
 	err = json.Unmarshal(dBody, &dataBody)
 	if err != nil {
 		return entity.Summary{}, err
+	}
+
+	// planets power json unmarshalling
+	localPlanetsPower, err := jsonPowerReader()
+	if err != nil {
+		return entity.Summary{}, err
+	}
+
+	// Getting response data for messages from local .txt file
+	checkData, err = txtDataWorker()
+
+	// TODO: compare all params from txtDataWorker with aspects that will
+	// TODO: remain after filtering and then return it into handler func for using it as response json body
+	for _, v := range checkData {
+		fmt.Printf("%d\n%v\n%d\n%s\n%s\n", v.CheckAspectingID, v.CheckType, v.CheckAspectedID, v.Soed, v.Body)
 	}
 
 	// Assignments elements and crests for every planet with zodiac sign
@@ -122,6 +143,21 @@ func (ws *WesternHoroscope) DataWorkerWithoutTime(r io.Reader, sex string) (enti
 		} else {
 			dataBody.Planets[i].Burred = intact
 		}
+
+		// assigning planets power
+		for _, v := range localPlanetsPower.Params {
+			if dataBody.Planets[i].Name == v.Planet {
+				if dataBody.Planets[i].Sign == v.House {
+					dataBody.Planets[i].Power = 6
+				} else if dataBody.Planets[i].Sign == v.Exile {
+					dataBody.Planets[i].Power = 1
+				} else if dataBody.Planets[i].Sign == v.Fall {
+					dataBody.Planets[i].Power = 0
+				} else {
+					dataBody.Planets[i].Power = nil
+				}
+			}
+		}
 	}
 
 	dataAspects := dataBody.Aspects
@@ -161,10 +197,12 @@ func (ws *WesternHoroscope) DataWorkerWithoutTime(r io.Reader, sex string) (enti
 	return dataBody, nil
 }
 
+// DataWorkerWithTime - change response param from entity.ResponseUpr on string (for easy sending data into chat)
 func (ws *WesternHoroscope) DataWorkerWithTime(r io.Reader) (entity.ResponseUpr, error) {
 	var dataBody entity.Summary
 	var localDataBody entity.Summary
 	var responseBody entity.ResponseUpr
+	checkData := make([]entity.CheckVars, 1096)
 
 	dBody, err := ioutil.ReadAll(r)
 	if err != nil {
@@ -184,15 +222,15 @@ func (ws *WesternHoroscope) DataWorkerWithTime(r io.Reader) (entity.ResponseUpr,
 		}
 	}
 
-	localHousesUpr, err := jsonReader()
+	localHousesUpr, err := jsonUprReader()
 	if err != nil {
 		return entity.ResponseUpr{}, err
 	}
 
 	for _, v := range localHousesUpr.Hoe {
-		//fmt.Printf("%d. %v\n", i+1, v)
 		if v.Sign == localDataBody.Houses[0].Sign {
-			responseBody.Sign = v.Sign
+			responseBody.House = localDataBody.Houses[0].House
+			responseBody.Sign = localDataBody.Houses[0].Sign
 			responseBody.Upr = v.Upr
 		}
 	}
@@ -203,7 +241,14 @@ func (ws *WesternHoroscope) DataWorkerWithTime(r io.Reader) (entity.ResponseUpr,
 		}
 	}
 
-	//dataBodyAspects := dataBody.Aspects
+	// Getting response data for messages from local .txt file
+	checkData, err = txtDataWorker()
+
+	// TODO: compare all params from txtDataWorker with aspects that will
+	// TODO: remain after filtering and then return it into handler func for using it as response json body
+	for _, v := range checkData {
+		fmt.Printf("%d\n%v\n%d\n%s\n%s\n", v.CheckAspectingID, v.CheckType, v.CheckAspectedID, v.Soed, v.Body)
+	}
 
 	// If planets with house #7 exist in localDataBody we continue work with p.1
 	/*if len(localDataBody.Planets) != 0 {
@@ -242,7 +287,7 @@ func (ws *WesternHoroscope) DataWorkerWithTime(r io.Reader) (entity.ResponseUpr,
 	return responseBody, nil
 }
 
-func jsonReader() (entity.HouseUpr, error) {
+func jsonUprReader() (entity.HouseUpr, error) {
 	var localHousesUpr entity.HouseUpr
 
 	jsonFile, err := os.Open(housesUpr)
@@ -267,6 +312,101 @@ func jsonReader() (entity.HouseUpr, error) {
 	}
 
 	return localHousesUpr, nil
+}
+
+func jsonPowerReader() (entity.PlanetPower, error) {
+	var localPlanetPower entity.PlanetPower
+
+	jsonFile, err := os.Open(planetsPower)
+	if err != nil {
+		logrus.Errorf("Cannot open the file: %s, due to error: %s", housesUpr, err.Error())
+		return entity.PlanetPower{}, err
+	}
+	defer jsonFile.Close()
+
+	byteData, err := ioutil.ReadAll(jsonFile)
+	if err != nil {
+		logrus.Errorf("Cannot read the file: %s, due to error: %s", housesUpr, err.Error())
+		return entity.PlanetPower{}, err
+	}
+
+	//byteData = bytes.TrimPrefix(byteData, []byte("\xef\xbb\xbf"))
+
+	err = json.Unmarshal(byteData, &localPlanetPower)
+	if err != nil {
+		logrus.Errorf("Cannot unmaeshal the file: %s, due to error: %s", housesUpr, err.Error())
+		return entity.PlanetPower{}, err
+	}
+
+	return localPlanetPower, nil
+}
+
+func txtReader() ([]string, error) {
+	file, err := os.Open("response.txt")
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	var lines []string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+
+	for i := 0; i < len(lines); i++ {
+		switch i {
+		default:
+			lines[i] = strings.Replace(lines[i], ".", "", -1)
+			lines[i] = strings.Replace(lines[i], "[", "", -1)
+			lines[i] = strings.Replace(lines[i], "]", "", -1)
+			i += 2
+			break
+		}
+	}
+
+	return lines, scanner.Err()
+}
+
+func txtDataWorker() ([]entity.CheckVars, error) {
+	procData := make([]entity.CheckVars, 1096)
+
+	localReadData, err := txtReader()
+	if err != nil {
+		return []entity.CheckVars{}, err
+	}
+
+	var counter = 0
+
+	for i := 0; i < len(localReadData); i += 3 {
+		var aspType int
+		var aspectedID int
+
+		aspectingID, _ := strconv.Atoi(localReadData[i][:2])
+		aspType, _ = strconv.Atoi(localReadData[i][2:5])
+		aspectedID, _ = strconv.Atoi(localReadData[i][5:len(localReadData[i])])
+
+		procData[counter].CheckAspectingID = aspectingID
+		procData[counter].CheckType = aspType
+		procData[counter].CheckAspectedID = aspectedID
+
+		counter++
+	}
+	counter = 0
+	for i := 1; i < len(localReadData); i += 2 {
+		procData[counter].Soed = localReadData[i]
+		i++
+		procData[counter].Body = localReadData[i]
+		counter++
+	}
+
+	/*for _, v := range procData {
+		fmt.Printf("%d\n%v\n%d\n%s\n%s\n", v.CheckAspectingID, v.CheckType, v.CheckAspectedID, v.Soed, v.Body)
+	}*/
+
+	// TODO: global handler for txtData for using this data in any func in file
+
+	return procData, nil
 }
 
 func (ws *WesternHoroscope) GenerateToken(clientID int) (string, error) {

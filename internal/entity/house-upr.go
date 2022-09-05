@@ -13,6 +13,7 @@ type MainStruct struct {
 }
 
 type ResponseUpr struct {
+	House   int       `json:"house,omitempty"`
 	Sign    string    `json:"sign,omitempty"`
 	Upr     string    `json:"upr,omitempty"`
 	Aspects []Aspects `json:"aspects,omitempty"`
