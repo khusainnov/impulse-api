@@ -17,4 +17,5 @@ type ResponseUpr struct {
 	Sign    string    `json:"sign,omitempty"`
 	Upr     string    `json:"upr,omitempty"`
 	Aspects []Aspects `json:"aspects,omitempty"`
+	RespMsg string    `json:"respMsg,omitempty"`
 }

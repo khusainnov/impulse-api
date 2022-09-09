@@ -32,11 +32,22 @@ type Houses struct {
 }
 
 type Aspects struct {
-	AspectingPlanet   string  `json:"aspecting_planet,omitempty"`
-	AspectedPlanet    string  `json:"aspected_planet,omitempty"`
-	AspectingPlanetID int     `json:"aspecting_planet_id,omitempty"`
-	AspectedPlanetID  int     `json:"aspected_planet_id,omitempty"`
-	Type              string  `json:"type,omitempty"`
-	Orb               float64 `json:"orb,omitempty"`
-	Diff              float64 `json:"diff,omitempty"`
+	AspectingPlanet   string      `json:"aspecting_planet,omitempty"`
+	AspectedPlanet    string      `json:"aspected_planet,omitempty"`
+	AspectingPlanetID int         `json:"aspecting_planet_id,omitempty"`
+	AspectedPlanetID  int         `json:"aspected_planet_id,omitempty"`
+	Type              interface{} `json:"type,omitempty"`
+	Orb               float64     `json:"orb,omitempty"`
+	Diff              float64     `json:"diff,omitempty"`
+}
+
+type ResponseWithoutTime struct {
+	Planets   []Planets `json:"planets,omitempty"`
+	Houses    []Houses  `json:"houses,omitempty"`
+	Ascendant float64   `json:"ascendant,omitempty"`
+	Midheaven float64   `json:"midheaven,omitempty"`
+	Vertex    float64   `json:"vertex,omitempty"`
+	Lilith    Planets   `json:"lilith,omitempty"`
+	Aspects   []Aspects `json:"aspects,omitempty"`
+	RespMsg   string    `json:"respMsg,omitempty"`
 }

@@ -31,6 +31,7 @@ const (
 	mutableCross  = "Мутабельный крест"
 	housesUpr     = "houses_upr.json"
 	planetsPower  = "planets_power.json"
+	filename      = "response_edited.txt"
 )
 
 type WesternHoroscope struct {
@@ -49,36 +50,32 @@ func NewWesternHoroscope(repo repository.ZodiacAPI) *WesternHoroscope {
 }
 
 // DataWorkerWithoutTime - change response param from entity.Summary on string (for easy sending data into chat)
-func (ws *WesternHoroscope) DataWorkerWithoutTime(r io.Reader, sex string) (entity.Summary, error) {
-	var dataBody entity.Summary
+func (ws *WesternHoroscope) DataWorkerWithoutTime(r io.Reader, sex string) (entity.ResponseWithoutTime, error) {
+	var dataBody entity.ResponseWithoutTime
 
-	checkData := make([]entity.CheckVars, 1096)
+	//localCheckData := make([]entity.CheckVars, 1096)
+	checkData := make([]entity.CheckVars, 365)
 	localAspects := make([]entity.Aspects, 0, 1000)
+	var responseBody entity.ResponseWithoutTime
 
 	dBody, err := ioutil.ReadAll(r)
 	if err != nil {
-		return entity.Summary{}, err
+		return entity.ResponseWithoutTime{}, err
 	}
 
 	err = json.Unmarshal(dBody, &dataBody)
 	if err != nil {
-		return entity.Summary{}, err
+		return entity.ResponseWithoutTime{}, err
 	}
 
 	// planets power json unmarshalling
 	localPlanetsPower, err := jsonPowerReader()
 	if err != nil {
-		return entity.Summary{}, err
+		return entity.ResponseWithoutTime{}, err
 	}
 
 	// Getting response data for messages from local .txt file
 	checkData, err = txtDataWorker()
-
-	// TODO: compare all params from txtDataWorker with aspects that will
-	// TODO: remain after filtering and then return it into handler func for using it as response json body
-	for _, v := range checkData {
-		fmt.Printf("%d\n%v\n%d\n%s\n%s\n", v.CheckAspectingID, v.CheckType, v.CheckAspectedID, v.Soed, v.Body)
-	}
 
 	// Assignments elements and crests for every planet with zodiac sign
 	for i, _ := range dataBody.Planets {
@@ -194,7 +191,48 @@ func (ws *WesternHoroscope) DataWorkerWithoutTime(r io.Reader, sex string) (enti
 
 	dataBody.Aspects = localAspects
 
-	return dataBody, nil
+	// preparation data for response body
+	responseBody.Ascendant = dataBody.Ascendant
+	responseBody.Midheaven = dataBody.Midheaven
+	responseBody.Lilith = dataBody.Lilith
+
+	for i := 0; i < len(dataBody.Aspects); i++ {
+		switch dataBody.Aspects[i].Type {
+		case "Conjunction":
+			dataBody.Aspects[i].Type = 0
+			break
+		case "Sextile":
+			dataBody.Aspects[i].Type = 60
+			break
+		case "Square":
+			dataBody.Aspects[i].Type = 90
+			break
+		case "Trine":
+			dataBody.Aspects[i].Type = 120
+			break
+		case "Opposition":
+			dataBody.Aspects[i].Type = 180
+			break
+		default:
+			dataBody.Aspects[i].Type = "null"
+			break
+		}
+
+		for _, v := range checkData {
+			if dataBody.Aspects[i].AspectingPlanetID == v.CheckAspectingID &&
+				dataBody.Aspects[i].AspectedPlanetID == v.CheckAspectedID {
+
+				if dataBody.Aspects[i].Type == v.CheckType && dataBody.Aspects[i].Type != "null" {
+					responseBody.Planets = append(responseBody.Planets, dataBody.Planets[i])
+					responseBody.Houses = append(responseBody.Houses, dataBody.Houses[i])
+					responseBody.Aspects = append(responseBody.Aspects, dataBody.Aspects[i])
+					responseBody.RespMsg += fmt.Sprintf("%s\n%s\n\n", v.Soed, v.Body)
+				}
+			}
+		}
+	}
+
+	return responseBody, nil
 }
 
 // DataWorkerWithTime - change response param from entity.ResponseUpr on string (for easy sending data into chat)
@@ -244,12 +282,6 @@ func (ws *WesternHoroscope) DataWorkerWithTime(r io.Reader) (entity.ResponseUpr,
 	// Getting response data for messages from local .txt file
 	checkData, err = txtDataWorker()
 
-	// TODO: compare all params from txtDataWorker with aspects that will
-	// TODO: remain after filtering and then return it into handler func for using it as response json body
-	for _, v := range checkData {
-		fmt.Printf("%d\n%v\n%d\n%s\n%s\n", v.CheckAspectingID, v.CheckType, v.CheckAspectedID, v.Soed, v.Body)
-	}
-
 	// If planets with house #7 exist in localDataBody we continue work with p.1
 	/*if len(localDataBody.Planets) != 0 {
 		for _, v := range localDataBody.Planets {
@@ -283,6 +315,40 @@ func (ws *WesternHoroscope) DataWorkerWithTime(r io.Reader) (entity.ResponseUpr,
 		}
 		// end of p.2
 	}*/
+
+	// preparation data for response body
+	for i := 0; i < len(responseBody.Aspects); i++ {
+		switch responseBody.Aspects[i].Type {
+		case "Conjunction":
+			responseBody.Aspects[i].Type = 0
+			break
+		case "Sextile":
+			responseBody.Aspects[i].Type = 60
+			break
+		case "Square":
+			responseBody.Aspects[i].Type = 90
+			break
+		case "Trine":
+			responseBody.Aspects[i].Type = 120
+			break
+		case "Opposition":
+			responseBody.Aspects[i].Type = 180
+			break
+		default:
+			responseBody.Aspects[i].Type = "null"
+			break
+		}
+
+		for _, v := range checkData {
+			if responseBody.Aspects[i].AspectingPlanetID == v.CheckAspectingID &&
+				responseBody.Aspects[i].AspectedPlanetID == v.CheckAspectedID {
+
+				if responseBody.Aspects[i].Type == v.CheckType && responseBody.Aspects[i].Type != "null" {
+					responseBody.RespMsg += fmt.Sprintf("%s\n%s\n\n", v.Soed, v.Body)
+				}
+			}
+		}
+	}
 
 	return responseBody, nil
 }
@@ -342,7 +408,7 @@ func jsonPowerReader() (entity.PlanetPower, error) {
 }
 
 func txtReader() ([]string, error) {
-	file, err := os.Open("response.txt")
+	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
 	}
@@ -399,12 +465,6 @@ func txtDataWorker() ([]entity.CheckVars, error) {
 		procData[counter].Body = localReadData[i]
 		counter++
 	}
-
-	/*for _, v := range procData {
-		fmt.Printf("%d\n%v\n%d\n%s\n%s\n", v.CheckAspectingID, v.CheckType, v.CheckAspectedID, v.Soed, v.Body)
-	}*/
-
-	// TODO: global handler for txtData for using this data in any func in file
 
 	return procData, nil
 }

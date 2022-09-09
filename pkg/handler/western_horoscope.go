@@ -29,7 +29,7 @@ func (h *Handler) WesternHoroscope(w http.ResponseWriter, r *http.Request) {
 	//API_CUSPS := fmt.Sprintf("%s&date=%s&time=%s&horo=sun&place=%s",
 	//	os.Getenv("API_CUSPS"), birthday, birthTime, city)
 
-	var dataBody entity.Summary
+	var dataBody entity.ResponseWithoutTime
 	var uprBody entity.ResponseUpr
 	var body io.LimitedReader
 
