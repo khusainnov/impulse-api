@@ -42,12 +42,36 @@ type Aspects struct {
 }
 
 type ResponseWithoutTime struct {
-	Planets   []Planets `json:"planets,omitempty"`
-	Houses    []Houses  `json:"houses,omitempty"`
-	Ascendant float64   `json:"ascendant,omitempty"`
-	Midheaven float64   `json:"midheaven,omitempty"`
-	Vertex    float64   `json:"vertex,omitempty"`
-	Lilith    Planets   `json:"lilith,omitempty"`
-	Aspects   []Aspects `json:"aspects,omitempty"`
-	RespMsg   string    `json:"respMsg,omitempty"`
+	Planets    []Planets      `json:"planets,omitempty"`
+	Houses     []Houses       `json:"houses,omitempty"`
+	Ascendant  float64        `json:"ascendant,omitempty"`
+	Midheaven  float64        `json:"midheaven,omitempty"`
+	Vertex     float64        `json:"vertex,omitempty"`
+	Lilith     Planets        `json:"lilith,omitempty"`
+	Aspects    []Aspects      `json:"aspects,omitempty"`
+	PrevVal    PrevVal        `json:"prevVal,omitempty"` //prev - prevail
+	AllElems   map[string]int `json:"allElems,omitempty"`
+	TestElems  string         `json:"testElems,omitempty"`
+	PrevCrest  PrevCrest      `json:"prevCrest,omitempty"`
+	AllCrests  map[string]int `json:"allCrests,omitempty"`
+	TestCrests string         `json:"testCrests,omitempty"`
+	RespMsg    string         `json:"respMsg,omitempty"`
+}
+
+type PrevVal struct {
+	FirstElem  string `json:"firstElem,omitempty"`
+	SecondElem string `json:"secondElem,omitempty"`
+	ThirdElem  string `json:"thirdElem,omitempty"`
+	FourthElem string `json:"fourthElem,omitempty"`
+}
+
+type PrevCrest struct {
+	FirstCrest  string `json:"firstCrest,omitempty"`
+	SecondCrest string `json:"secondCrest,omitempty"`
+	ThirdCrest  string `json:"thirdCrest,omitempty"`
+}
+
+type GenResp struct {
+	RWT ResponseWithoutTime `json:"withoutTime"`
+	RU  ResponseUpr         `json:"withTime"`
 }

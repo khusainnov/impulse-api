@@ -31,7 +31,7 @@ const (
 	mutableCross  = "Мутабельный крест"
 	housesUpr     = "houses_upr.json"
 	planetsPower  = "planets_power.json"
-	filename      = "response_edited.txt"
+	filename      = "Aspects.txt"
 )
 
 type WesternHoroscope struct {
@@ -57,6 +57,9 @@ func (ws *WesternHoroscope) DataWorkerWithoutTime(r io.Reader, sex string) (enti
 	checkData := make([]entity.CheckVars, 365)
 	localAspects := make([]entity.Aspects, 0, 1000)
 	var responseBody entity.ResponseWithoutTime
+
+	mapElement := map[string]int{fire: 0, ground: 0, air: 0, water: 0}
+	mapCrest := map[string]int{cardinalCross: 0, fixedCross: 0, mutableCross: 0}
 
 	dBody, err := ioutil.ReadAll(r)
 	if err != nil {
@@ -141,6 +144,12 @@ func (ws *WesternHoroscope) DataWorkerWithoutTime(r io.Reader, sex string) (enti
 			dataBody.Planets[i].Burred = intact
 		}
 
+		mapElement[dataBody.Planets[i].Element]++
+		mapCrest[dataBody.Planets[i].Crest]++
+
+		responseBody.AllElems = mapElement
+		responseBody.AllCrests = mapCrest
+
 		// assigning planets power
 		for _, v := range localPlanetsPower.Params {
 			if dataBody.Planets[i].Name == v.Planet {
@@ -154,6 +163,72 @@ func (ws *WesternHoroscope) DataWorkerWithoutTime(r io.Reader, sex string) (enti
 					dataBody.Planets[i].Power = nil
 				}
 			}
+		}
+	}
+
+	tmp := 0
+	tmpName := ""
+	for i, v := range mapElement {
+		if mapElement[i] > tmp {
+			tmp = v
+		} else {
+			continue
+		}
+		if mapElement[i] == tmp && i != responseBody.PrevVal.FirstElem {
+			responseBody.PrevVal.FirstElem = i
+			tmpName = i
+			//responseBody.PrevElem = fmt.Sprintf("%s: %d", i, v)
+		}
+	}
+	responseBody.TestElems = fmt.Sprintf("%s\n", responseBody.PrevVal.FirstElem)
+
+	for i, v := range mapElement {
+		if tmp == v && tmpName != i {
+			responseBody.PrevVal.SecondElem = i
+			//responseBody.SndPrevE = fmt.Sprintf("%s: %d", i, v)
+			responseBody.TestElems += fmt.Sprintf("%s\n", responseBody.PrevVal.SecondElem)
+		}
+	}
+	for i, v := range mapElement {
+		if tmp == v && tmpName != i && responseBody.PrevVal.SecondElem != i {
+			responseBody.PrevVal.ThirdElem = i
+			responseBody.TestElems += fmt.Sprintf("%s\n", responseBody.PrevVal.ThirdElem)
+		}
+
+		if tmp == v && tmpName != i && responseBody.PrevVal.SecondElem != i && responseBody.PrevVal.ThirdElem != i {
+			responseBody.PrevVal.FourthElem = i
+			responseBody.TestElems += fmt.Sprintf("%s\n", responseBody.PrevVal.FourthElem)
+		}
+	}
+
+	tmp = 0
+	tmpName = ""
+	for i, v := range mapCrest {
+		if mapCrest[i] > tmp {
+			tmp = v
+		} else {
+			continue
+		}
+		if mapCrest[i] == tmp && i != responseBody.PrevCrest.FirstCrest {
+			responseBody.PrevCrest.FirstCrest = i
+			tmpName = i
+			//responseBody.PrevCrest = fmt.Sprintf("%s: %d", i, v)
+		}
+	}
+	responseBody.TestCrests = fmt.Sprintf("%s\n", responseBody.PrevCrest.FirstCrest)
+
+	for i, v := range mapCrest {
+		if tmp == v && tmpName != i {
+			responseBody.PrevCrest.SecondCrest = i
+			//responseBody.SndPrevC = fmt.Sprintf("%s: %d", i, v)
+			responseBody.TestCrests += fmt.Sprintf("%s\n", responseBody.PrevCrest.SecondCrest)
+		}
+	}
+	for i, v := range mapCrest {
+		if tmp == v && tmpName != i && responseBody.PrevCrest.SecondCrest != i {
+			responseBody.PrevCrest.ThirdCrest = i
+			//responseBody.SndPrevC = fmt.Sprintf("%s: %d", i, v)
+			responseBody.TestCrests += fmt.Sprintf("%s\n", responseBody.PrevCrest.ThirdCrest)
 		}
 	}
 
