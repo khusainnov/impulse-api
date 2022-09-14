@@ -2,3 +2,4 @@ sendpulse
 .idea
 *.json
 .txt
+Dockerfile

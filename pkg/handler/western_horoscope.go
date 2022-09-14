@@ -63,7 +63,7 @@ func (h *Handler) WesternHoroscope(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("access-token", token)
 
 	logrus.Printf("%s \t  %d\n", birthTime, len(birthTime))
-	/*if len(birthTime) <= 2 {
+	if len(birthTime) <= 2 {
 		dataBody, err = h.service.DataWorkerWithoutTime(resp.Body, sex)
 		if err != nil {
 			_ = json.NewEncoder(w).Encode(&map[string]interface{}{
@@ -86,9 +86,9 @@ func (h *Handler) WesternHoroscope(w http.ResponseWriter, r *http.Request) {
 		}
 		json.NewEncoder(w).Encode(&uprBody)
 		return
-	}*/
+	}
 
-	uprBody, err = h.service.DataWorkerWithTime(resp.Body)
+	/*uprBody, err = h.service.DataWorkerWithTime(resp.Body)
 	if err != nil {
 		_ = json.NewEncoder(w).Encode(&map[string]interface{}{
 			"code":    http.StatusInternalServerError,
@@ -104,7 +104,6 @@ func (h *Handler) WesternHoroscope(w http.ResponseWriter, r *http.Request) {
 			"code":    http.StatusInternalServerError,
 			"message": err.Error(),
 		})
-		fmt.Println("Without time error")
 		return
 	}
 
@@ -113,5 +112,5 @@ func (h *Handler) WesternHoroscope(w http.ResponseWriter, r *http.Request) {
 		"with_time":    uprBody,
 	})
 
-	return
+	return*/
 }
