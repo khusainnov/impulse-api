@@ -13,11 +13,17 @@ type MainStruct struct {
 }
 
 type ResponseUpr struct {
-	House     int       `json:"house,omitempty"`
-	Sign      string    `json:"sign,omitempty"`
-	Upr       string    `json:"upr,omitempty"`
-	Aspects   []Aspects `json:"aspects,omitempty"`
-	PrevElem  string    `json:"prevElem,omitempty"`
-	PrevCrest string    `json:"prevCrest,omitempty"`
-	RespMsg   string    `json:"respMsg,omitempty"`
+	Planets    []Planets      `json:"planets,omitempty"`
+	House      int            `json:"house,omitempty"`
+	Sign       string         `json:"sign,omitempty"`
+	Upr        string         `json:"upr,omitempty"`
+	Power      interface{}    `json:"power"`
+	Aspects    []Aspects      `json:"aspects,omitempty"`
+	AllElems   map[string]int `json:"allElems,omitempty"`
+	PrevVal    PrevVal        `json:"prevVal,omitempty"`
+	TestElems  string         `json:"testElems,omitempty"`
+	AllCrests  map[string]int `json:"allCrests,omitempty"`
+	PrevCrest  PrevCrest      `json:"prevCrest,omitempty"`
+	TestCrests string         `json:"testCrests,omitempty"`
+	RespMsg    string         `json:"respMsg,omitempty"`
 }

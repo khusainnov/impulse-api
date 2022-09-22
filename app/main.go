@@ -12,6 +12,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// @title Sendpulse Western Horoscope
+// @version 1.0
+// @description API takes birth_date, birth_time, birth_place and gender. As a response api returns processed data
+
+// @host khusainnov.ru
+// @BasePath /signs/{birthday}/{birth_time}/{city}/{sex}
+
 func main() {
 	logrus.SetFormatter(new(logrus.JSONFormatter))
 

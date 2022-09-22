@@ -60,6 +60,7 @@ func (ws *WesternHoroscope) DataWorkerWithoutTime(r io.Reader, sex string) (enti
 
 	mapElement := map[string]int{fire: 0, ground: 0, air: 0, water: 0}
 	mapCrest := map[string]int{cardinalCross: 0, fixedCross: 0, mutableCross: 0}
+	planetsName := []string{"Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Uranus", "Neptune", "Pluto"}
 
 	dBody, err := ioutil.ReadAll(r)
 	if err != nil {
@@ -144,8 +145,12 @@ func (ws *WesternHoroscope) DataWorkerWithoutTime(r io.Reader, sex string) (enti
 			dataBody.Planets[i].Burred = intact
 		}
 
-		mapElement[dataBody.Planets[i].Element]++
-		mapCrest[dataBody.Planets[i].Crest]++
+		for _, v := range planetsName {
+			if v == dataBody.Planets[i].Name {
+				mapElement[dataBody.Planets[i].Element]++
+				mapCrest[dataBody.Planets[i].Crest]++
+			}
+		}
 
 		responseBody.AllElems = mapElement
 		responseBody.AllCrests = mapCrest
@@ -187,6 +192,7 @@ func (ws *WesternHoroscope) DataWorkerWithoutTime(r io.Reader, sex string) (enti
 			responseBody.PrevVal.SecondElem = i
 			//responseBody.SndPrevE = fmt.Sprintf("%s: %d", i, v)
 			responseBody.TestElems += fmt.Sprintf("%s\n", responseBody.PrevVal.SecondElem)
+			break
 		}
 	}
 	for i, v := range mapElement {
@@ -250,7 +256,15 @@ func (ws *WesternHoroscope) DataWorkerWithoutTime(r io.Reader, sex string) (enti
 			localAspects = append(localAspects, dataAspects[i])
 		}
 
+		/*if (dataAspects[i].Type == "Square" || dataAspects[i].Type == "Opposition") && (dataAspects[0].AspectedPlanet != dataAspects[i].AspectedPlanet && dataAspects[0].AspectingPlanet != dataAspects[i].AspectingPlanet) {
+			localAspects = append(localAspects, dataAspects[i])
+		}*/
+
 		if dataAspects[i].Type == "Square" || dataAspects[i].Type == "Opposition" {
+			if localAspects[0].AspectingPlanet == dataAspects[i].AspectingPlanet && localAspects[0].AspectedPlanet == dataAspects[i].AspectedPlanet {
+				continue
+			}
+
 			localAspects = append(localAspects, dataAspects[i])
 		}
 
@@ -317,6 +331,9 @@ func (ws *WesternHoroscope) DataWorkerWithTime(r io.Reader) (entity.ResponseUpr,
 	var responseBody entity.ResponseUpr
 	checkData := make([]entity.CheckVars, 1096)
 
+	mapElement := map[string]int{fire: 0, ground: 0, air: 0, water: 0}
+	mapCrest := map[string]int{cardinalCross: 0, fixedCross: 0, mutableCross: 0}
+
 	dBody, err := ioutil.ReadAll(r)
 	if err != nil {
 		return entity.ResponseUpr{}, err
@@ -326,6 +343,163 @@ func (ws *WesternHoroscope) DataWorkerWithTime(r io.Reader) (entity.ResponseUpr,
 	if err != nil {
 		return entity.ResponseUpr{}, err
 	}
+
+	localPlanetsPower, err := jsonPowerReader()
+
+	// Assignments elements and crests for every planet with zodiac sign
+	for i, _ := range dataBody.Planets {
+		sunDegree := dataBody.Planets[0].FullDegree
+		sunDegree2 := dataBody.Planets[0].FullDegree
+		switch dataBody.Planets[i].Sign {
+		case "Aries":
+			dataBody.Planets[i].Element = fire
+			dataBody.Planets[i].Crest = cardinalCross
+			break
+		case "Taurus":
+			dataBody.Planets[i].Element = ground
+			dataBody.Planets[i].Crest = fixedCross
+			break
+		case "Gemini":
+			dataBody.Planets[i].Element = air
+			dataBody.Planets[i].Crest = mutableCross
+			break
+		case "Cancer":
+			dataBody.Planets[i].Element = water
+			dataBody.Planets[i].Crest = cardinalCross
+			break
+		case "Leo":
+			dataBody.Planets[i].Element = fire
+			dataBody.Planets[i].Crest = fixedCross
+			break
+		case "Virgo":
+			dataBody.Planets[i].Element = ground
+			dataBody.Planets[i].Crest = mutableCross
+			break
+		case "Libra":
+			dataBody.Planets[i].Element = air
+			dataBody.Planets[i].Crest = cardinalCross
+			break
+		case "Scorpio":
+			dataBody.Planets[i].Element = water
+			dataBody.Planets[i].Crest = fixedCross
+			break
+		case "Sagittarius":
+			dataBody.Planets[i].Element = fire
+			dataBody.Planets[i].Crest = mutableCross
+			break
+		case "Capricorn":
+			dataBody.Planets[i].Element = ground
+			dataBody.Planets[i].Crest = cardinalCross
+			break
+		case "Aquarius":
+			dataBody.Planets[i].Element = air
+			dataBody.Planets[i].Crest = fixedCross
+			break
+		case "Pisces":
+			dataBody.Planets[i].Element = water
+			dataBody.Planets[i].Crest = mutableCross
+			break
+		default:
+			logrus.Infoln("Данного знака зодиака не найдено")
+		}
+
+		// Checking planets for their statement
+		if i > 0 && (((dataBody.Planets[i].FullDegree - sunDegree2) >= -4) && ((dataBody.Planets[i].FullDegree - sunDegree) <= 4)) {
+			dataBody.Planets[i].Burred = burred
+		} else {
+			dataBody.Planets[i].Burred = intact
+		}
+
+		mapElement[dataBody.Planets[i].Element]++
+		mapCrest[dataBody.Planets[i].Crest]++
+
+		responseBody.AllElems = mapElement
+		responseBody.AllCrests = mapCrest
+
+		// assigning planets power
+		for _, k := range localPlanetsPower.Params {
+			if dataBody.Planets[i].Name == k.Planet {
+				if dataBody.Planets[i].Sign == k.House {
+					dataBody.Planets[i].Power = 6
+				} else if dataBody.Planets[i].Sign == k.Exile {
+					dataBody.Planets[i].Power = 1
+				} else if dataBody.Planets[i].Sign == k.Fall {
+					dataBody.Planets[i].Power = 0
+				} else {
+					dataBody.Planets[i].Power = nil
+				}
+			}
+		}
+	}
+
+	tmp := 0
+	tmpName := ""
+	for i, v := range mapElement {
+		if mapElement[i] > tmp {
+			tmp = v
+		} else {
+			continue
+		}
+		if mapElement[i] == tmp && i != responseBody.PrevVal.FirstElem {
+			responseBody.PrevVal.FirstElem = i
+			tmpName = i
+			//responseBody.PrevElem = fmt.Sprintf("%s: %d", i, v)
+		}
+	}
+	responseBody.TestElems = fmt.Sprintf("%s\n", responseBody.PrevVal.FirstElem)
+
+	for i, v := range mapElement {
+		if tmp == v && tmpName != i {
+			responseBody.PrevVal.SecondElem = i
+			//responseBody.SndPrevE = fmt.Sprintf("%s: %d", i, v)
+			responseBody.TestElems += fmt.Sprintf("%s\n", responseBody.PrevVal.SecondElem)
+			break
+		}
+	}
+	for i, v := range mapElement {
+		if tmp == v && tmpName != i && responseBody.PrevVal.SecondElem != i {
+			responseBody.PrevVal.ThirdElem = i
+			responseBody.TestElems += fmt.Sprintf("%s\n", responseBody.PrevVal.ThirdElem)
+		}
+
+		if tmp == v && tmpName != i && responseBody.PrevVal.SecondElem != i && responseBody.PrevVal.ThirdElem != i {
+			responseBody.PrevVal.FourthElem = i
+			responseBody.TestElems += fmt.Sprintf("%s\n", responseBody.PrevVal.FourthElem)
+		}
+	}
+
+	tmp = 0
+	tmpName = ""
+	for i, v := range mapCrest {
+		if mapCrest[i] > tmp {
+			tmp = v
+		} else {
+			continue
+		}
+		if mapCrest[i] == tmp && i != responseBody.PrevCrest.FirstCrest {
+			responseBody.PrevCrest.FirstCrest = i
+			tmpName = i
+			//responseBody.PrevCrest = fmt.Sprintf("%s: %d", i, v)
+		}
+	}
+	responseBody.TestCrests = fmt.Sprintf("%s\n", responseBody.PrevCrest.FirstCrest)
+
+	for i, v := range mapCrest {
+		if tmp == v && tmpName != i {
+			responseBody.PrevCrest.SecondCrest = i
+			//responseBody.SndPrevC = fmt.Sprintf("%s: %d", i, v)
+			responseBody.TestCrests += fmt.Sprintf("%s\n", responseBody.PrevCrest.SecondCrest)
+		}
+	}
+	for i, v := range mapCrest {
+		if tmp == v && tmpName != i && responseBody.PrevCrest.SecondCrest != i {
+			responseBody.PrevCrest.ThirdCrest = i
+			//responseBody.SndPrevC = fmt.Sprintf("%s: %d", i, v)
+			responseBody.TestCrests += fmt.Sprintf("%s\n", responseBody.PrevCrest.ThirdCrest)
+		}
+	}
+
+	responseBody.Planets = dataBody.Planets
 
 	// start of p.1
 	// Planets with house number 7 will add into localDataBody
@@ -390,6 +564,12 @@ func (ws *WesternHoroscope) DataWorkerWithTime(r io.Reader) (entity.ResponseUpr,
 		}
 		// end of p.2
 	}*/
+
+	for _, v := range responseBody.Planets {
+		if v.Name == responseBody.Upr {
+			responseBody.Power = v.Power
+		}
+	}
 
 	// preparation data for response body
 	for i := 0; i < len(responseBody.Aspects); i++ {

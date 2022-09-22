@@ -18,6 +18,16 @@ const (
 	clientID = 618694
 )
 
+// @Summary WesternHoroscope
+// @Tags data handler
+// @Description data handler gets data from vars in url and then request to astrobot API for getting all data about planets in this date
+// @Accept json
+// @Produce json
+// @Param dataBody entity.ResponseWithoutTime
+// @Param uprBody entity.ResponseUpr
+// @Failure 500
+// @Router /signs/{birthday}/{birth_time}/{city}/{sex} [get, post]
+
 func (h *Handler) WesternHoroscope(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 

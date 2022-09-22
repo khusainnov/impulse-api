@@ -8,19 +8,19 @@ COPY go.sum go.sum
 
 RUN go mod download
 
-RUN mkdir /app
+#RUN mkdir /app
 COPY /app/*.go app/
-RUN mkdir /config
+#RUN mkdir /config
 COPY /config/.env config/
-RUN mkdir /internal \
-    mkdir /internal/entity \
+#RUN mkdir /internal \
+#    mkdir /internal/entity \
 COPY /internal/entity/*.go internal/entity/
-RUN mkdir /pkg \
-    mkdir /pkg/handler \
+#RUN mkdir /pkg \
+#    mkdir /pkg/handler \
 COPY /pkg/handler/*.go pkg/handler/
-RUN mkdir /pkg/repository
+#RUN mkdir /pkg/repository
 COPY /pkg/repository/*.go pkg/repository/
-RUN mkdir /pkg/service
+#RUN mkdir /pkg/service
 COPY /pkg/service/*.go pkg/service/
 COPY Aspects.txt .
 COPY houses_upr.json .

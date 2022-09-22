@@ -1,0 +1,10 @@
+basePath: /signs/{birthday}/{birth_time}/{city}/{sex}
+host: khusainnov.ru
+info:
+  contact: {}
+  description: API takes birth_date, birth_time, birth_place and gender. As a response
+    api returns processed data
+  title: Sendpulse Western Horoscope
+  version: "1.0"
+paths: {}
+swagger: "2.0"
