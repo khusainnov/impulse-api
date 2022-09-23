@@ -10,7 +10,15 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "contact": {},
+        "contact": {
+            "name": "API support",
+            "url": "http://t.me/khusainnov",
+            "email": "khusainnov@gmail.com"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
@@ -22,7 +30,7 @@ const docTemplate = `{
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
 	Host:             "khusainnov.ru",
-	BasePath:         "/signs/{birthday}/{birth_time}/{city}/{sex}",
+	BasePath:         "/signs/birthday/birth_time/city/sex",
 	Schemes:          []string{},
 	Title:            "Sendpulse Western Horoscope",
 	Description:      "API takes birth_date, birth_time, birth_place and gender. As a response api returns processed data",

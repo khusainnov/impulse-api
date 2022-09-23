@@ -1,9 +1,15 @@
-basePath: /signs/{birthday}/{birth_time}/{city}/{sex}
+basePath: /signs/birthday/birth_time/city/sex
 host: khusainnov.ru
 info:
-  contact: {}
+  contact:
+    email: khusainnov@gmail.com
+    name: API support
+    url: http://t.me/khusainnov
   description: API takes birth_date, birth_time, birth_place and gender. As a response
     api returns processed data
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
   title: Sendpulse Western Horoscope
   version: "1.0"
 paths: {}
