@@ -49,6 +49,20 @@ func NewWesternHoroscope(repo repository.ZodiacAPI) *WesternHoroscope {
 	return &WesternHoroscope{repo: repo}
 }
 
+// DataWorkerWithoutTime
+// @Tags 		working with data which haven't time (default time = 12:00)
+// @Description handling data by the criteria
+// @Accept  	io.Reader, sex string
+// @Produce 	entity.ResponseUpr
+// @Param   	dataBody entity.ResponseWithoutTime
+// @Param   	checkData []entity.CheckVars
+// @Param   	localAspects []entity.Aspects
+// @Param   	responseBody entity.ResponseWithoutTime
+// @Param   	mapElement map[string]int
+// @Param   	mapCrest map[string]int
+// @Param   	planetsName []string
+// @Success 	{object} entity.ResponseUpr
+// @Failure 	{object} error
 // DataWorkerWithoutTime - change response param from entity.Summary on string (for easy sending data into chat)
 func (ws *WesternHoroscope) DataWorkerWithoutTime(r io.Reader, sex string) (entity.ResponseWithoutTime, error) {
 	var dataBody entity.ResponseWithoutTime
@@ -73,15 +87,16 @@ func (ws *WesternHoroscope) DataWorkerWithoutTime(r io.Reader, sex string) (enti
 	}
 
 	// planets power json unmarshalling
-	localPlanetsPower, err := jsonPowerReader()
+	localPlanetsPower, err := JsonPowerReader()
 	if err != nil {
 		return entity.ResponseWithoutTime{}, err
 	}
 
-	// Getting response data for messages from local .txt file
-	checkData, err = txtDataWorker()
+	// getting response data for messages from local .txt file
+	checkData, err = TxtDataWorker()
 
-	// Assignments elements and crests for every planet with zodiac sign
+	// assignments elements and crests for every planet with zodiac sign
+	// присваивание элеменотов и крестов каждой планете по знаку задиака
 	for i, _ := range dataBody.Planets {
 		sunDegree := dataBody.Planets[0].FullDegree
 		sunDegree2 := dataBody.Planets[0].FullDegree
@@ -138,13 +153,16 @@ func (ws *WesternHoroscope) DataWorkerWithoutTime(r io.Reader, sex string) (enti
 			logrus.Infoln("Данного знака зодиака не найдено")
 		}
 
-		// Checking planets for their statement
+		// checking planets for their statement
+		// проврека планет на их состояние
 		if i > 0 && (((dataBody.Planets[i].FullDegree - sunDegree2) >= -4) && ((dataBody.Planets[i].FullDegree - sunDegree) <= 4)) {
 			dataBody.Planets[i].Burred = burred
 		} else {
 			dataBody.Planets[i].Burred = intact
 		}
 
+		// counting elements and crests if planets contains in planetsName
+		// элементы и кресты считаются если планета существует в planetsName
 		for _, v := range planetsName {
 			if v == dataBody.Planets[i].Name {
 				mapElement[dataBody.Planets[i].Element]++
@@ -155,7 +173,8 @@ func (ws *WesternHoroscope) DataWorkerWithoutTime(r io.Reader, sex string) (enti
 		responseBody.AllElems = mapElement
 		responseBody.AllCrests = mapCrest
 
-		// assigning planets power
+		// assigning planets power (only for 0, 1, 6)
+		// присваивание силы планет (только для 0, 1, 6)
 		for _, v := range localPlanetsPower.Params {
 			if dataBody.Planets[i].Name == v.Planet {
 				if dataBody.Planets[i].Sign == v.House {
@@ -173,6 +192,9 @@ func (ws *WesternHoroscope) DataWorkerWithoutTime(r io.Reader, sex string) (enti
 
 	tmp := 0
 	tmpName := ""
+
+	// look over mapElement and taking max value in mapElement body and writing it into responseBody
+	// перебираем mapElement и выбираем переменную с максимальным значением и добавлем его в responseBody
 	for i, v := range mapElement {
 		if mapElement[i] > tmp {
 			tmp = v
@@ -209,6 +231,9 @@ func (ws *WesternHoroscope) DataWorkerWithoutTime(r io.Reader, sex string) (enti
 
 	tmp = 0
 	tmpName = ""
+
+	// look over mapCrest and taking max value in mapCrest body and writing it into responseBody
+	// перебираем mapCrest и выбираем переменную с максимальным значением и добавлем его в responseBody
 	for i, v := range mapCrest {
 		if mapCrest[i] > tmp {
 			tmp = v
@@ -251,16 +276,22 @@ func (ws *WesternHoroscope) DataWorkerWithoutTime(r io.Reader, sex string) (enti
 	}
 
 	// starting p.3
+	// cycle for look over all dataAspects
+	// цикл для перебора всех аспектов из тела dataAspects
 	for i, _ := range dataAspects {
+
+		// if Mars and Venus contains in dataAspects as (aspected or aspecting) planet then we add it into localAspects array
+		// если Марс и Венера содератся в dataAspects как ожидаемая планета тогда мы добавляем данный аспект в массив localAspects
 		if ((dataAspects[i].AspectedPlanet == "Mars" && dataAspects[i].AspectingPlanet == "Venus") || (dataAspects[i].AspectedPlanet == "Venus" && dataAspects[i].AspectingPlanet == "Mars")) && dataAspects[i].Type == "Conjunction" {
 			localAspects = append(localAspects, dataAspects[i])
 		}
 
-		/*if (dataAspects[i].Type == "Square" || dataAspects[i].Type == "Opposition") && (dataAspects[0].AspectedPlanet != dataAspects[i].AspectedPlanet && dataAspects[0].AspectingPlanet != dataAspects[i].AspectingPlanet) {
-			localAspects = append(localAspects, dataAspects[i])
-		}*/
-
+		// if planet aspects contains type Square or Opposition then this aspect will be added into localAspects array
+		// если аспекты содержат тип Квадрат или Оппозиция тогда мы добавляем данный элемент в массив localAspects
 		if dataAspects[i].Type == "Square" || dataAspects[i].Type == "Opposition" {
+
+			// skip if this item is already in array
+			// пропускаем элемент если он уже содержится в массиве
 			if localAspects[0].AspectingPlanet == dataAspects[i].AspectingPlanet && localAspects[0].AspectedPlanet == dataAspects[i].AspectedPlanet {
 				continue
 			}
@@ -268,6 +299,8 @@ func (ws *WesternHoroscope) DataWorkerWithoutTime(r io.Reader, sex string) (enti
 			localAspects = append(localAspects, dataAspects[i])
 		}
 
+		//
+		//
 		if (((dataAspects[i].AspectingPlanet == "Mars" || dataAspects[i].AspectingPlanet == "Venus") &&
 			(dataAspects[i].AspectedPlanet == "Uranus" && dataAspects[i].AspectedPlanet == "Neptune" && dataAspects[i].AspectedPlanet == "Pluto")) ||
 			((dataAspects[i].AspectedPlanet == "Mars" || dataAspects[i].AspectedPlanet == "Venus") &&
@@ -280,11 +313,14 @@ func (ws *WesternHoroscope) DataWorkerWithoutTime(r io.Reader, sex string) (enti
 
 	dataBody.Aspects = localAspects
 
-	// preparation data for response body
+	// adding data into responseBody struct
+	// добавляем элементы в выводящую структуру responseBody
 	responseBody.Ascendant = dataBody.Ascendant
 	responseBody.Midheaven = dataBody.Midheaven
 	responseBody.Lilith = dataBody.Lilith
 
+	// preparation data for response body
+	// добавляем текст к respMsg если обработанные аспекты совпадают со значениями из файла
 	for i := 0; i < len(dataBody.Aspects); i++ {
 		switch dataBody.Aspects[i].Type {
 		case "Conjunction":
@@ -307,6 +343,7 @@ func (ws *WesternHoroscope) DataWorkerWithoutTime(r io.Reader, sex string) (enti
 			break
 		}
 
+		//
 		for _, v := range checkData {
 			if dataBody.Aspects[i].AspectingPlanetID == v.CheckAspectingID &&
 				dataBody.Aspects[i].AspectedPlanetID == v.CheckAspectedID {
@@ -324,6 +361,20 @@ func (ws *WesternHoroscope) DataWorkerWithoutTime(r io.Reader, sex string) (enti
 	return responseBody, nil
 }
 
+// DataWorkerWithTime
+// @Tags 		working with data which have time
+// @Description handling data by the criteria
+// @Accept  	io.Reader
+// @Produce 	entity.ResponseUpr
+// @Param   	dataBody entity.Summary
+// @Param   	localDataBody entity.Summary
+// @Param   	responseBody entity.ResponseUpr
+// @Param   	checkData []entity.CheckVars
+// @Param   	mapElement map[string]int
+// @Param   	mapCrest map[string]int
+// @Param   	planetsName []string
+// @Success 	{object} entity.ResponseUpr
+// @Failure 	{object} error
 // DataWorkerWithTime - change response param from entity.ResponseUpr on string (for easy sending data into chat)
 func (ws *WesternHoroscope) DataWorkerWithTime(r io.Reader) (entity.ResponseUpr, error) {
 	var dataBody entity.Summary
@@ -333,6 +384,7 @@ func (ws *WesternHoroscope) DataWorkerWithTime(r io.Reader) (entity.ResponseUpr,
 
 	mapElement := map[string]int{fire: 0, ground: 0, air: 0, water: 0}
 	mapCrest := map[string]int{cardinalCross: 0, fixedCross: 0, mutableCross: 0}
+	planetsName := []string{"Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Uranus", "Neptune", "Pluto"}
 
 	dBody, err := ioutil.ReadAll(r)
 	if err != nil {
@@ -344,9 +396,10 @@ func (ws *WesternHoroscope) DataWorkerWithTime(r io.Reader) (entity.ResponseUpr,
 		return entity.ResponseUpr{}, err
 	}
 
-	localPlanetsPower, err := jsonPowerReader()
+	localPlanetsPower, err := JsonPowerReader()
 
-	// Assignments elements and crests for every planet with zodiac sign
+	// assignments elements and crests for every planet with zodiac sign
+	// присваивание элеменотов и крестов каждой планете по знаку задиака
 	for i, _ := range dataBody.Planets {
 		sunDegree := dataBody.Planets[0].FullDegree
 		sunDegree2 := dataBody.Planets[0].FullDegree
@@ -403,20 +456,28 @@ func (ws *WesternHoroscope) DataWorkerWithTime(r io.Reader) (entity.ResponseUpr,
 			logrus.Infoln("Данного знака зодиака не найдено")
 		}
 
-		// Checking planets for their statement
+		// checking planets for their statement
+		// проврека планет на их состояние
 		if i > 0 && (((dataBody.Planets[i].FullDegree - sunDegree2) >= -4) && ((dataBody.Planets[i].FullDegree - sunDegree) <= 4)) {
 			dataBody.Planets[i].Burred = burred
 		} else {
 			dataBody.Planets[i].Burred = intact
 		}
 
-		mapElement[dataBody.Planets[i].Element]++
-		mapCrest[dataBody.Planets[i].Crest]++
+		// counting elements and crests if planets contains in planetsName
+		// элементы и кресты считаются если планета существует в planetsName
+		for _, v := range planetsName {
+			if v == dataBody.Planets[i].Name {
+				mapElement[dataBody.Planets[i].Element]++
+				mapCrest[dataBody.Planets[i].Crest]++
+			}
+		}
 
 		responseBody.AllElems = mapElement
 		responseBody.AllCrests = mapCrest
 
-		// assigning planets power
+		// assigning planets power (only for 0, 1, 6)
+		// присваивание силы планет (только для 0, 1, 6)
 		for _, k := range localPlanetsPower.Params {
 			if dataBody.Planets[i].Name == k.Planet {
 				if dataBody.Planets[i].Sign == k.House {
@@ -434,6 +495,9 @@ func (ws *WesternHoroscope) DataWorkerWithTime(r io.Reader) (entity.ResponseUpr,
 
 	tmp := 0
 	tmpName := ""
+
+	// look over mapElement and taking max value in mapElement body and writing it into responseBody
+	// перебираем mapElement и выбираем переменную с максимальным значением и добавлем его в responseBody
 	for i, v := range mapElement {
 		if mapElement[i] > tmp {
 			tmp = v
@@ -451,7 +515,6 @@ func (ws *WesternHoroscope) DataWorkerWithTime(r io.Reader) (entity.ResponseUpr,
 	for i, v := range mapElement {
 		if tmp == v && tmpName != i {
 			responseBody.PrevVal.SecondElem = i
-			//responseBody.SndPrevE = fmt.Sprintf("%s: %d", i, v)
 			responseBody.TestElems += fmt.Sprintf("%s\n", responseBody.PrevVal.SecondElem)
 			break
 		}
@@ -470,6 +533,9 @@ func (ws *WesternHoroscope) DataWorkerWithTime(r io.Reader) (entity.ResponseUpr,
 
 	tmp = 0
 	tmpName = ""
+
+	// look over mapCrest and taking max value in mapCrest body and writing it into responseBody
+	// перебираем mapCrest и выбираем переменную с максимальным значением и добавлем его в responseBody
 	for i, v := range mapCrest {
 		if mapCrest[i] > tmp {
 			tmp = v
@@ -479,7 +545,6 @@ func (ws *WesternHoroscope) DataWorkerWithTime(r io.Reader) (entity.ResponseUpr,
 		if mapCrest[i] == tmp && i != responseBody.PrevCrest.FirstCrest {
 			responseBody.PrevCrest.FirstCrest = i
 			tmpName = i
-			//responseBody.PrevCrest = fmt.Sprintf("%s: %d", i, v)
 		}
 	}
 	responseBody.TestCrests = fmt.Sprintf("%s\n", responseBody.PrevCrest.FirstCrest)
@@ -487,14 +552,12 @@ func (ws *WesternHoroscope) DataWorkerWithTime(r io.Reader) (entity.ResponseUpr,
 	for i, v := range mapCrest {
 		if tmp == v && tmpName != i {
 			responseBody.PrevCrest.SecondCrest = i
-			//responseBody.SndPrevC = fmt.Sprintf("%s: %d", i, v)
 			responseBody.TestCrests += fmt.Sprintf("%s\n", responseBody.PrevCrest.SecondCrest)
 		}
 	}
 	for i, v := range mapCrest {
 		if tmp == v && tmpName != i && responseBody.PrevCrest.SecondCrest != i {
 			responseBody.PrevCrest.ThirdCrest = i
-			//responseBody.SndPrevC = fmt.Sprintf("%s: %d", i, v)
 			responseBody.TestCrests += fmt.Sprintf("%s\n", responseBody.PrevCrest.ThirdCrest)
 		}
 	}
@@ -502,7 +565,8 @@ func (ws *WesternHoroscope) DataWorkerWithTime(r io.Reader) (entity.ResponseUpr,
 	responseBody.Planets = dataBody.Planets
 
 	// start of p.1
-	// Planets with house number 7 will add into localDataBody
+	// Planets with house number = 7 will be added into localDataBody
+	// Планеты у которых номер дома = 7 добавляются в localDataBody
 	for _, v := range dataBody.Houses {
 		if v.House == 7 {
 			localDataBody.Houses = append(localDataBody.Houses, v)
@@ -514,6 +578,8 @@ func (ws *WesternHoroscope) DataWorkerWithTime(r io.Reader) (entity.ResponseUpr,
 		return entity.ResponseUpr{}, err
 	}
 
+	// assigning UprPlanet values into responseBody
+	// присваивание данных планеты-управителя в responseBody
 	for _, v := range localHousesUpr.Hoe {
 		if v.Sign == localDataBody.Houses[0].Sign {
 			responseBody.House = localDataBody.Houses[0].House
@@ -522,16 +588,19 @@ func (ws *WesternHoroscope) DataWorkerWithTime(r io.Reader) (entity.ResponseUpr,
 		}
 	}
 
+	// appending into responseBody.Aspects aspect which contains UprPlanet
+	// добавляем в слайс responseBody.Aspects аспекты в которых содержится Планета-управитель
 	for _, v := range dataBody.Aspects {
 		if v.AspectedPlanet == responseBody.Upr || v.AspectingPlanet == responseBody.Upr {
 			responseBody.Aspects = append(responseBody.Aspects, v)
 		}
 	}
 
-	// Getting response data for messages from local .txt file
-	checkData, err = txtDataWorker()
+	// getting response data for messages from local .txt file
+	checkData, err = TxtDataWorker()
 
-	// If planets with house #7 exist in localDataBody we continue work with p.1
+	// if planets with house #7 exist in localDataBody we continue work with p.1
+	// продолжение второй части ТЗ, пока делать не нужно
 	/*if len(localDataBody.Planets) != 0 {
 		for _, v := range localDataBody.Planets {
 			for i, _ := range dataBodyAspects {
@@ -565,6 +634,8 @@ func (ws *WesternHoroscope) DataWorkerWithTime(r io.Reader) (entity.ResponseUpr,
 		// end of p.2
 	}*/
 
+	// adding power number where upr = 7 if UprPlanetName equals on of responseBody.Planet
+	// присваем управителю 7 планеты значение силы если Имя планеты совпадает с планетой из списка responseBody.Planet
 	for _, v := range responseBody.Planets {
 		if v.Name == responseBody.Upr {
 			responseBody.Power = v.Power
@@ -572,6 +643,7 @@ func (ws *WesternHoroscope) DataWorkerWithTime(r io.Reader) (entity.ResponseUpr,
 	}
 
 	// preparation data for response body
+	// добавляем текст к respMsg если обработанные аспекты совпадают со значениями из файла
 	for i := 0; i < len(responseBody.Aspects); i++ {
 		switch responseBody.Aspects[i].Type {
 		case "Conjunction":
@@ -635,7 +707,15 @@ func jsonUprReader() (entity.HouseUpr, error) {
 	return localHousesUpr, nil
 }
 
-func jsonPowerReader() (entity.PlanetPower, error) {
+// JsonPowerReader
+// @Tags 		json planets power reader
+// @Description getting data from planets_power.json
+// @Accept  	json
+// @Produce 	entity.PlanetPower
+// @Param   	localPlanetsPower entity.PlanetPower
+// @Success 	{object} entity.PlanetPower
+// @Failure 	{object} error
+func JsonPowerReader() (entity.PlanetPower, error) {
 	var localPlanetPower entity.PlanetPower
 
 	jsonFile, err := os.Open(planetsPower)
@@ -651,7 +731,7 @@ func jsonPowerReader() (entity.PlanetPower, error) {
 		return entity.PlanetPower{}, err
 	}
 
-	//byteData = bytes.TrimPrefix(byteData, []byte("\xef\xbb\xbf"))
+	//byteData = bytes.TrimPrefix(byteData, []byte("\xef\xbb\xbf")) - magic method
 
 	err = json.Unmarshal(byteData, &localPlanetPower)
 	if err != nil {
@@ -662,8 +742,16 @@ func jsonPowerReader() (entity.PlanetPower, error) {
 	return localPlanetPower, nil
 }
 
-func txtReader() ([]string, error) {
-	file, err := os.Open(filename)
+// txtReader
+// @Tags 		txt reader
+// @Description getting data from Aspects.txt and reading it into []string and removing dots and parentheses
+// @Accept  	txt
+// @Produce 	[]string
+// @Param   	lines []string
+// @Success 	{object} []string
+// @Failure 	{object} error
+func txtReader(fname string) ([]string, error) {
+	file, err := os.Open(fname)
 	if err != nil {
 		return nil, err
 	}
@@ -689,10 +777,18 @@ func txtReader() ([]string, error) {
 	return lines, scanner.Err()
 }
 
-func txtDataWorker() ([]entity.CheckVars, error) {
+// TxtDataWorker
+// @Tags 		data worker
+// @Description splitting aspects from txt file and fills []entity.CheckVars struct array
+// @Accept  	txt
+// @Produce 	[]entity.CheckVars
+// @Param   	procBody []entity.CheckVars
+// @Success 	{object} []entity.CheckVars
+// @Failure 	{object} error
+func TxtDataWorker() ([]entity.CheckVars, error) {
 	procData := make([]entity.CheckVars, 1096)
 
-	localReadData, err := txtReader()
+	localReadData, err := txtReader(filename)
 	if err != nil {
 		return []entity.CheckVars{}, err
 	}

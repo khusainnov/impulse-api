@@ -10,14 +10,23 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
+
+	_ "impulse-api/docs"
 )
 
-// @title Sendpulse Western Horoscope
-// @version 1.0
-// @description API takes birth_date, birth_time, birth_place and gender. As a response api returns processed data
+// @title 		  Sendpulse Western Horoscope
+// @version       1.0
+// @description   API takes birth_date, birth_time, birth_place and gender. As a response api returns processed data
 
-// @host khusainnov.ru
-// @BasePath /signs/{birthday}/{birth_time}/{city}/{sex}
+// @contact.name  API support
+// @contact.url   http://t.me/khusainnov
+// @contact.email khusainnov@gmail.com
+
+// @license.name  Apache 2.0
+// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host 		  khusainnov.ru
+// @BasePath 	  /signs/birthday/birth_time/city/sex
 
 func main() {
 	logrus.SetFormatter(new(logrus.JSONFormatter))

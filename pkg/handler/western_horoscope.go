@@ -12,22 +12,29 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
+
+	_ "impulse-api/docs"
 )
 
 const (
 	clientID = 618694
 )
 
-// @Summary WesternHoroscope
-// @Tags data handler
+// @Summary 	WesternHoroscope
+// @Tags 		data handler
 // @Description data handler gets data from vars in url and then request to astrobot API for getting all data about planets in this date
-// @Accept json
-// @Produce json
-// @Param dataBody entity.ResponseWithoutTime
-// @Param uprBody entity.ResponseUpr
-// @Failure 500
-// @Router /signs/{birthday}/{birth_time}/{city}/{sex} [get, post]
+// @Accept  	json
+// @Produce 	json
+// @Param   	dataBody entity.ResponseWithoutTime
+// @Param   	uprBody entity.ResponseUpr
+// @Success 	200 {object} entity.ResponseWithoutTime
+// @Success 	200 {object} entity.ResponseUpr
+// @Failure 	500 {object} json.Encode()
+// @Router  	/signs/birthday/birth_time/city/sex [get]
 
+// Name WesternHoroscope
+// Tag DataHandler
+// WesternHoroscope - func for signs handler, output type `json`
 func (h *Handler) WesternHoroscope(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -41,6 +48,7 @@ func (h *Handler) WesternHoroscope(w http.ResponseWriter, r *http.Request) {
 
 	logrus.Infof("%s // %s // %s ", birthday, birthTime, city)
 
+	// if value haven't birth time then request sends with default time = 12:00
 	if len(birthTime) <= 2 {
 		API = fmt.Sprintf("%s&date=%s&time=12:00&horo=moon&place=%s", os.Getenv("API"), birthday, city)
 	} else {
@@ -50,18 +58,19 @@ func (h *Handler) WesternHoroscope(w http.ResponseWriter, r *http.Request) {
 	var dataBody entity.ResponseWithoutTime
 	var uprBody entity.ResponseUpr
 	var body io.LimitedReader
-	//var fullResp entity.GenResp
 
 	client := http.Client{
 		Timeout: time.Second * 15,
 	}
 
+	// client.Post sends post request on API and gets response body
 	resp, err := client.Post(API, "application/json", &body)
 	if err != nil {
 		logrus.Errorf("Cannot get data from api, due to error: %s", err.Error())
 		return
 	}
 
+	// h.service.ZodiacApi.GenerateToken generates token with clientID claim
 	token, err := h.service.ZodiacApi.GenerateToken(clientID)
 	if err != nil {
 		json.NewEncoder(w).Encode(&map[string]interface{}{
@@ -72,7 +81,7 @@ func (h *Handler) WesternHoroscope(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("access-token", token)
 
-	logrus.Printf("%s \t  %d\n", birthTime, len(birthTime))
+	// if we haven't birth time then we go in DataWorkerWithoutTime() and return dataBody as json
 	if len(birthTime) <= 2 {
 		dataBody, err = h.service.DataWorkerWithoutTime(resp.Body, sex)
 		if err != nil {
@@ -85,7 +94,6 @@ func (h *Handler) WesternHoroscope(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(&dataBody)
 		return
 	} else {
-
 		uprBody, err = h.service.DataWorkerWithTime(resp.Body)
 		if err != nil {
 			_ = json.NewEncoder(w).Encode(&map[string]interface{}{
@@ -97,30 +105,4 @@ func (h *Handler) WesternHoroscope(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(&uprBody)
 		return
 	}
-
-	/*uprBody, err = h.service.DataWorkerWithTime(resp.Body)
-	if err != nil {
-		_ = json.NewEncoder(w).Encode(&map[string]interface{}{
-			"code":    http.StatusInternalServerError,
-			"message": err.Error(),
-		})
-		fmt.Println("WIth time error")
-		return
-	}
-
-	dataBody, err = h.service.DataWorkerWithoutTime(resp.Body, sex)
-	if err != nil {
-		_ = json.NewEncoder(w).Encode(&map[string]interface{}{
-			"code":    http.StatusInternalServerError,
-			"message": err.Error(),
-		})
-		return
-	}
-
-	json.NewEncoder(w).Encode(&map[string]interface{}{
-		"without_time": dataBody,
-		"with_time":    uprBody,
-	})
-
-	return*/
 }
