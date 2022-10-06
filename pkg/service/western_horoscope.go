@@ -361,6 +361,7 @@ func (ws *WesternHoroscope) DataWorkerWithoutTime(r io.Reader, sex string) (enti
 		}
 	}
 
+	// correction for adding output data
 	for _, v := range dataBody.Planets {
 		responseBody.Planets = append(responseBody.Planets, v)
 	}
