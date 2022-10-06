@@ -68,7 +68,8 @@ func (ws *WesternHoroscope) DataWorkerWithoutTime(r io.Reader, sex string) (enti
 	var dataBody entity.ResponseWithoutTime
 
 	//localCheckData := make([]entity.CheckVars, 1096)
-	checkData := make([]entity.CheckVars, 365)
+	//checkData := make([]entity.CheckVars, 365)
+	var checkData []entity.CheckVars
 	localAspects := make([]entity.Aspects, 0, 1000)
 	var responseBody entity.ResponseWithoutTime
 
@@ -292,8 +293,10 @@ func (ws *WesternHoroscope) DataWorkerWithoutTime(r io.Reader, sex string) (enti
 
 			// skip if this item is already in array
 			// пропускаем элемент если он уже содержится в массиве
-			if localAspects[0].AspectingPlanet == dataAspects[i].AspectingPlanet && localAspects[0].AspectedPlanet == dataAspects[i].AspectedPlanet {
-				continue
+			if len(localAspects) > 0 {
+				if localAspects[0].AspectingPlanet == dataAspects[i].AspectingPlanet && localAspects[0].AspectedPlanet == dataAspects[i].AspectedPlanet {
+					continue
+				}
 			}
 
 			localAspects = append(localAspects, dataAspects[i])
@@ -311,6 +314,7 @@ func (ws *WesternHoroscope) DataWorkerWithoutTime(r io.Reader, sex string) (enti
 		// Ending p.3
 	}
 
+	//dataBody.Aspects = localAspects
 	dataBody.Aspects = localAspects
 
 	// adding data into responseBody struct
@@ -343,19 +347,26 @@ func (ws *WesternHoroscope) DataWorkerWithoutTime(r io.Reader, sex string) (enti
 			break
 		}
 
-		//
-		for _, v := range checkData {
-			if dataBody.Aspects[i].AspectingPlanetID == v.CheckAspectingID &&
-				dataBody.Aspects[i].AspectedPlanetID == v.CheckAspectedID {
+		_ = checkData
+		for j := 0; j < len(checkData); j++ {
+			//for _, v := range checkData {
+			if dataBody.Aspects[i].AspectingPlanetID == checkData[j].CheckAspectingID &&
+				dataBody.Aspects[i].AspectedPlanetID == checkData[j].CheckAspectedID {
 
-				if dataBody.Aspects[i].Type == v.CheckType && dataBody.Aspects[i].Type != "null" {
-					responseBody.Planets = append(responseBody.Planets, dataBody.Planets[i])
-					responseBody.Houses = append(responseBody.Houses, dataBody.Houses[i])
+				if dataBody.Aspects[i].Type == checkData[j].CheckType && dataBody.Aspects[i].Type != "null" {
 					responseBody.Aspects = append(responseBody.Aspects, dataBody.Aspects[i])
-					responseBody.RespMsg += fmt.Sprintf("%s\n%s\n\n", v.Soed, v.Body)
+					responseBody.RespMsg += fmt.Sprintf( /*%s\n*/ "%s\n\n" /*v.Soed,*/, checkData[j].Body)
 				}
 			}
 		}
+	}
+
+	for _, v := range dataBody.Planets {
+		responseBody.Planets = append(responseBody.Planets, v)
+	}
+
+	for _, v := range dataBody.Houses {
+		responseBody.Houses = append(responseBody.Houses, v)
 	}
 
 	return responseBody, nil
@@ -482,10 +493,13 @@ func (ws *WesternHoroscope) DataWorkerWithTime(r io.Reader) (entity.ResponseUpr,
 			if dataBody.Planets[i].Name == k.Planet {
 				if dataBody.Planets[i].Sign == k.House {
 					dataBody.Planets[i].Power = 6
+					break
 				} else if dataBody.Planets[i].Sign == k.Exile {
 					dataBody.Planets[i].Power = 1
+					break
 				} else if dataBody.Planets[i].Sign == k.Fall {
 					dataBody.Planets[i].Power = 0
+					break
 				} else {
 					dataBody.Planets[i].Power = nil
 				}
@@ -671,7 +685,7 @@ func (ws *WesternHoroscope) DataWorkerWithTime(r io.Reader) (entity.ResponseUpr,
 				responseBody.Aspects[i].AspectedPlanetID == v.CheckAspectedID {
 
 				if responseBody.Aspects[i].Type == v.CheckType && responseBody.Aspects[i].Type != "null" {
-					responseBody.RespMsg += fmt.Sprintf("%s\n%s\n\n", v.Soed, v.Body)
+					responseBody.RespMsg += fmt.Sprintf( /*%s\n*/ "%s\n\n" /*v.Soed,*/, v.Body)
 				}
 			}
 		}

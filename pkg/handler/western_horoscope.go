@@ -32,7 +32,7 @@ const (
 // @Failure 	500 {object} json.Encode()
 // @Router  	/signs/birthday/birth_time/city/sex [get]
 
-// Name WesternHoroscope
+// WesternHoroscope
 // Tag DataHandler
 // WesternHoroscope - func for signs handler, output type `json`
 func (h *Handler) WesternHoroscope(w http.ResponseWriter, r *http.Request) {
@@ -94,6 +94,15 @@ func (h *Handler) WesternHoroscope(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(&dataBody)
 		return
 	} else {
+		/*dataBody, err = h.service.DataWorkerWithoutTime(resp.Body, sex)
+		if err != nil {
+			_ = json.NewEncoder(w).Encode(&map[string]interface{}{
+				"code":    http.StatusInternalServerError,
+				"message": err.Error(),
+			})
+			return
+		}*/
+
 		uprBody, err = h.service.DataWorkerWithTime(resp.Body)
 		if err != nil {
 			_ = json.NewEncoder(w).Encode(&map[string]interface{}{
@@ -103,6 +112,12 @@ func (h *Handler) WesternHoroscope(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		json.NewEncoder(w).Encode(&uprBody)
+
+		/*json.NewEncoder(w).Encode(&map[string]interface{}{
+			"without_time": dataBody,
+			"with_time":    uprBody,
+		})*/
+
 		return
 	}
 }
